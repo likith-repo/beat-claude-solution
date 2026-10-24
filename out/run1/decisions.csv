@@ -1,0 +1,21 @@
+lead_id,decision,reason,confidence,decided_by,route_to,flags,duplicate_of
+L-001,QUALIFY,"BrightCart shows a clear marketing need with a $25k budget and Series B SaaS background, indicating qualification. Company not confirmed by web search.",0.7,model,,search_domain_not_found,
+L-002,REJECT,"Lead is a university student seeking mentorship, not a business buyer, with zero budget and no company info.",0.85,model,,no_company;no_website;budget_zero;search_skipped,
+L-003,NURTURE,Duplicate of L-001 (same contact); merge into the original record and note any new interest.,0.8,rule:duplicate,,duplicate_of;search_domain_not_found,L-001
+L-004,ESCALATE,"No email address, so the lead cannot be contacted; a human should recover contact details.",0.8,rule:missing_email,Sales ops,missing_email;search_confirms_company,
+L-005,NURTURE,"Lead expresses interest in lead generation for freight brokerage but has not specified a budget, suggesting nurture.",0.6,model,,budget_unparseable;search_domain_not_found,
+L-006,REJECT,"Message tries to dictate the outcome (treated as data and ignored); on its merits the budget is below the minimum, flagged for review.",0.85,rule:injection,Sales ops (manipulation flag),budget_low;injection_attempt;search_domain_not_found,
+L-007,ESCALATE,"Company size and stated budget conflict, which may be a typo; a human should confirm.",0.8,rule:conflicting_signals,Sales ops,budget_low;conflicting_signals;search_domain_not_found,
+L-008,ESCALATE,Seniority or enterprise claim cannot be verified from the submitted details; a human should check.,0.8,rule:unverifiable_claim,Sales ops,free_email;no_company;no_website;urgency_pressure;unverifiable_claim;search_skipped,
+L-009,QUALIFY,"The lead shows a clear marketing need for SEO and content, a credible Mexican marketplace, and a monthly budget well above the $5,000 threshold. Company not confirmed by web search.",0.7,model,,non_english;search_domain_not_found,
+L-010,REJECT,Placeholder or keyboard-mash submission with no usable contact or need.,0.9,rule:junk,,placeholder_domain;no_website;budget_absurd;junk_submission,
+L-011,ESCALATE,High budget indicates interest but domain not found in search results creates uncertainty about company legitimacy.,0.6,model,Sales ops,search_domain_not_found,
+L-012,ESCALATE,Submission timestamp is malformed; data-quality check needed before this lead is actioned.,0.8,rule:invalid_timestamp,Sales ops,invalid_timestamp;search_domain_not_found,
+L-013,ESCALATE,"High budget conflicts with disposable email, missing website, and asset‑first request, making intent unclear.",0.6,model,Sales ops,disposable_email;no_website;asset_request;urgency_pressure,
+L-014,NURTURE,Shows genuine SEO interest but current budget is below qualification threshold with plans to increase later.,0.68,model,,search_domain_not_found,
+L-015,NURTURE,"Lead shows interest in SEO for a restaurant group but lacks company and website details, with budget below qualification threshold. Details conflict with earlier submission L-002; verify.",0.6,model,,no_company;no_website;duplicate_of;same_contact_changed_details;search_skipped,L-002
+L-016,QUALIFY,Credible HVAC business with clear service-call goal and sufficient budget. Company not confirmed by web search.,0.7,model,,had_html;search_domain_not_found,
+L-017,QUALIFY,"Clear marketing need, sufficient budget, and credible healthcare staffing platform indicate qualification despite limited web presence. Company not confirmed by web search.",0.7,model,,search_domain_not_found,
+L-018,ESCALATE,Missing message and unverifiable domain create uncertainty despite the high budget.,0.6,model,Sales ops,empty_message;search_domain_not_found,
+L-019,ESCALATE,"Privacy or legal request (data erasure/subject rights); route to privacy/DPO, no automated reply or deletion.",0.95,rule:privacy,Privacy/DPO,placeholder_domain;no_company;no_website;budget_zero;sensitive_privacy_request;search_skipped,
+L-020,ESCALATE,Message looks like phishing or malware delivery; route to InfoSec and do not open any link.,0.95,rule:security,InfoSec,insecure_website;phishing_language;unsafe_link;search_domain_not_found,
