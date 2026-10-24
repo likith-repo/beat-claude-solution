@@ -12,3 +12,4 @@ infra/*.tfvars
 infra/tfplan
 .api_key
 .streamlit/secrets.toml
+*.swp

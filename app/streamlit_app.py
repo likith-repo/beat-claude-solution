@@ -3,9 +3,7 @@
 Config comes from the environment or .streamlit/secrets.toml, never from the page:
   LEAD_TRIAGE_API_URL   e.g. https://xxlg3of1y3.execute-api.ap-southeast-1.amazonaws.com
   LEAD_TRIAGE_API_KEY   the value of the SSM parameter /lead-triage/api_key
-  APP_PASSWORD          shared password for the page; the page stays locked if unset
 """
-import hmac
 import os
 import time
 
@@ -41,6 +39,11 @@ def call(method, path, key, base, **kw):
     return body
 
 
+def safe_cell(v):
+    """Defuse spreadsheet formulas in exported text (lead_id and reason can carry lead text)."""
+    return "'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+
+
 def table(decisions):
     df = pd.DataFrame(decisions)
     for col in COLUMNS:
@@ -59,20 +62,6 @@ base, key = setting("LEAD_TRIAGE_API_URL"), setting("LEAD_TRIAGE_API_KEY")
 if not (base and key):
     st.error("Set LEAD_TRIAGE_API_URL and LEAD_TRIAGE_API_KEY (environment or .streamlit/secrets.toml).")
     st.stop()
-
-expected = setting("APP_PASSWORD")
-if not expected:
-    st.error("APP_PASSWORD is not set, so the page stays locked.")
-    st.stop()
-if not st.session_state.get("unlocked"):
-    entered = st.text_input("Password", type="password")
-    if not entered:
-        st.stop()
-    if not hmac.compare_digest(entered.encode(), expected.encode()):
-        st.error("Wrong password.")
-        st.stop()
-    st.session_state["unlocked"] = True
-    st.rerun()
 
 upload = st.file_uploader("Leads CSV", type="csv")
 if upload and st.button("Run triage", type="primary"):
@@ -122,5 +111,6 @@ if run:
         st.caption("Links expire after 15 minutes. Run again or reload to get fresh ones.")
         for name, url in progress.get("downloads", {}).items():
             st.link_button(name, url)
-        st.download_button("decisions (table view, CSV)", table(progress["decisions"]).to_csv(index=False),
+        st.download_button("decisions (table view, CSV)",
+                           table(progress["decisions"]).apply(lambda col: col.map(safe_cell)).to_csv(index=False),
                            file_name=f"triage_{run['run_id']}.csv", mime="text/csv")

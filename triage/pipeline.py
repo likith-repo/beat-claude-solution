@@ -101,10 +101,15 @@ def run(input_path, out_dir, classifier, mode, model_name="", delay=0.0, log=pri
     return decisions, digest, run_id
 
 
+def _safe_cell(v):
+    """Defuse spreadsheet formulas: lead_id and reason can carry text from the lead."""
+    return "'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+
+
 def _write_csv(path, decisions):
     with path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["lead_id", "decision", "reason", "confidence", "decided_by", "route_to", "flags", "duplicate_of"])
         for d in decisions:
-            w.writerow([d.lead_id, d.decision, d.reason, d.confidence, d.decided_by, d.route_to,
-                        ";".join(d.flags), d.duplicate_of or ""])
+            w.writerow([_safe_cell(c) for c in (d.lead_id, d.decision, d.reason, d.confidence, d.decided_by,
+                                                d.route_to, ";".join(d.flags), d.duplicate_of or "")])
