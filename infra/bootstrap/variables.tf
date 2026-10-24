@@ -3,10 +3,10 @@ variable "region" {
   default = "ap-southeast-1"
 }
 
-variable "github_repo" {
-  description = "owner/name of the repo whose workflows may assume the CI roles"
+variable "github_sub_prefix" {
+  description = "Start of the OIDC sub claim. This repo uses GitHub's immutable subject (owner and repo ids), see: gh api repos/<owner>/<repo>/actions/oidc/customization/sub"
   type        = string
-  default     = "likith-repo/beat-claude-solution"
+  default     = "repo:likith-repo@309335415/beat-claude-solution@1431751865"
 }
 
 variable "create_oidc_provider" {

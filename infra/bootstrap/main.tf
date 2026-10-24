@@ -24,7 +24,8 @@ locals {
   acct         = data.aws_caller_identity.me.account_id
   state_bucket = "lead-triage-tfstate-${local.acct}-${var.region}"
   app_bucket   = "lead-triage-${local.acct}-${var.region}" # must match local.bucket in ../main.tf
-  repo         = "repo:${var.github_repo}"
+  repo         = var.github_sub_prefix
+  state_key    = "lead-triage/terraform.tfstate"
 
   # The only IAM roles ../main.tf creates. Named exactly so the CI roles (ci-lead-triage-*) fall outside.
   runtime_roles = [for n in ["lead-triage-api", "lead-triage-worker"] : "arn:aws:iam::${local.acct}:role/${n}"]
@@ -179,8 +180,8 @@ data "aws_iam_policy_document" "plan" {
     resources = [aws_s3_bucket.state.arn]
   }
   statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.state.arn}/*"]
+    actions   = ["s3:GetObject"] # not GetObjectVersion, so old state versions stay unreadable
+    resources = ["${aws_s3_bucket.state.arn}/${local.state_key}"]
   }
 }
 
@@ -191,7 +192,7 @@ data "aws_iam_policy_document" "apply" {
   }
   statement {
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"] # state and its lockfile
-    resources = ["${aws_s3_bucket.state.arn}/*"]
+    resources = ["${aws_s3_bucket.state.arn}/${local.state_key}", "${aws_s3_bucket.state.arn}/${local.state_key}.tflock"]
   }
 
   # Refresh reads.
@@ -215,7 +216,7 @@ data "aws_iam_policy_document" "apply" {
     }
   }
   statement {
-    actions   = ["iam:DeleteRole", "iam:DeleteRolePolicy", "iam:UpdateAssumeRolePolicy", "iam:TagRole", "iam:UntagRole"]
+    actions   = ["iam:DeleteRole", "iam:DeleteRolePolicy", "iam:TagRole", "iam:UntagRole"]
     resources = local.runtime_roles
   }
   statement {
