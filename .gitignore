@@ -13,3 +13,6 @@ infra/tfplan
 .api_key
 .streamlit/secrets.toml
 *.swp
+infra/bootstrap/.terraform/
+infra/bootstrap/*.tfstate*
+infra/bootstrap/tfplan
