@@ -10,7 +10,7 @@ variable "lambda_zip" {
 }
 
 variable "allowed_origins" {
-  description = "Browser origins allowed by CORS. Set to your Replit app URL once known; the x-api-key header is the real gate."
+  description = "Browser origins allowed by CORS. The Streamlit app calls the API from its server, so no browser origin needs access; the x-api-key header is the real gate."
   type        = list(string)
   default     = ["*"]
 }
