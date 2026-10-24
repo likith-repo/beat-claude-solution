@@ -13,6 +13,7 @@ import streamlit as st
 
 POLL_SECONDS = 2.5
 MAX_WAIT_SECONDS = 900
+BRIEF_VERSION = "2026-07"  # mirrors the brief_version written to the run log
 MAX_BYTES = 100_000  # mirrors backend.handler.MAX_BYTES
 DECISION_ORDER = ["QUALIFY", "NURTURE", "REJECT", "ESCALATE"]
 COLUMNS = ["lead_id", "decision", "confidence", "reason", "route_to", "decided_by", "duplicate_of", "flags"]
@@ -53,7 +54,11 @@ def table(decisions):
     return df[COLUMNS]
 
 
-st.set_page_config(page_title="Lead Triage", layout="wide")
+st.set_page_config(page_title="Beat Claude Challenge | Lead Triage", page_icon=":material/target:", layout="wide")
+with st.container(border=True):
+    st.markdown("##### BEAT CLAUDE CHALLENGE")
+    st.markdown("**Topic:** AI Automation Intern 012, The Lead Triage Agent")
+    st.caption(f"Brief version {BRIEF_VERSION}")
 st.title("Lead Triage Agent")
 st.caption("Upload a leads CSV. Each row is classified QUALIFY, NURTURE, REJECT or ESCALATE. "
            "The result is a first pass for a human to review, not a final call.")
