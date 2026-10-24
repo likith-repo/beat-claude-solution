@@ -5,8 +5,8 @@ from pathlib import Path
 
 from backend import handler
 from triage.classifier import OfflineClassifier
+from tests.support import FIXTURE, SAMPLE_SHA
 
-FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "inbound_leads.csv"
 API_KEY = "test-api-key"
 
 
@@ -87,7 +87,7 @@ class ApiTests(BackendCase):
         status, body = self.call(post(self.csv))
         self.assertEqual(status, 202)
         self.assertEqual((body["status"], body["total"]), ("queued", 20))
-        self.assertEqual(body["fixture_sha256"], "cc1927ca771c37b186a2abdb7b9757594da79ec6dda074e5a514dd2761cc8599")
+        self.assertEqual(body["fixture_sha256"], SAMPLE_SHA)
         rid = body["run_id"]
         self.assertIn(("b", f"runs/{rid}/input.csv"), self.aws["s3"].objects)
         call = self.aws["lam"].calls[0]

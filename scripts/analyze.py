@@ -11,7 +11,7 @@ from triage.rules import analyze_leads  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--input", default="fixtures/inbound_leads.csv")
+    ap.add_argument("--input", required=True, help="leads CSV to process")
     args = ap.parse_args()
 
     rows, digest = read_leads(args.input)

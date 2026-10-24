@@ -9,8 +9,8 @@ from triage.pipeline import run
 from triage.rules import analyze_lead
 from triage.search import (SearchBudgetExceeded, SerpApiClient, Verifier, build_query, summarize,
                            verification_flags)
+from tests.support import FIXTURE
 
-FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "inbound_leads.csv"
 KEY = "SECRETKEY123"
 
 

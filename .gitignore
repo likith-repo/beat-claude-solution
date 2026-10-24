@@ -16,3 +16,6 @@ infra/tfplan
 infra/bootstrap/.terraform/
 infra/bootstrap/*.tfstate*
 infra/bootstrap/tfplan
+out/
+fixtures/
+*.csv

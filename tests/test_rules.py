@@ -5,9 +5,9 @@ from triage.ingest import SchemaError, read_leads, sha256_file
 from triage.rules import (
     analyze_lead, analyze_leads, clean_text, defang, parse_budget, timestamp_is_valid,
 )
+from tests.support import FIXTURE, SAMPLE_SHA
 
-FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "inbound_leads.csv"
-EXPECTED_SHA = "cc1927ca771c37b186a2abdb7b9757594da79ec6dda074e5a514dd2761cc8599"
+EXPECTED_SHA = SAMPLE_SHA
 
 
 def row(**kw):
