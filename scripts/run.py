@@ -18,7 +18,7 @@ from triage.search import SerpApiClient, Verifier  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--input", default="fixtures/inbound_leads.csv")
+    ap.add_argument("--input", required=True, help="leads CSV to process")
     ap.add_argument("--out", default="out/latest")
     ap.add_argument("--offline", action="store_true", help="rules-only classifier; no API key needed")
     ap.add_argument("--no-search", action="store_true", help="skip SerpApi web verification")

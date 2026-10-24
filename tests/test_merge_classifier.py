@@ -8,8 +8,8 @@ from triage.merge import merge
 from triage.pipeline import run
 from triage.prompt import build_messages
 from triage.rules import analyze_lead, analyze_leads
+from tests.support import FIXTURE
 
-FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "inbound_leads.csv"
 
 
 def row(**kw):
