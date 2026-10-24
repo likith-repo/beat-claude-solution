@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.5"
+  backend "s3" {} # bucket, key and region come from backend.hcl
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -20,6 +21,17 @@ data "aws_caller_identity" "me" {}
 locals {
   name   = "lead-triage"
   bucket = "${local.name}-${data.aws_caller_identity.me.account_id}-${var.region}"
+
+  # The SSM parameters are not Terraform resources, so their values never reach state.
+  ssm_name = {
+    api_key    = "/${local.name}/api_key"
+    openrouter = "/${local.name}/openrouter_api_key"
+    serpapi    = "/${local.name}/serpapi_api_key"
+  }
+  ssm_arn = { for k, n in local.ssm_name : k => "arn:aws:ssm:${var.region}:${data.aws_caller_identity.me.account_id}:parameter${n}" }
+
+  # Created by infra/bootstrap; the CI apply role can only write roles that carry it.
+  runtime_boundary = "arn:aws:iam::${data.aws_caller_identity.me.account_id}:policy/${local.name}-runtime-boundary"
 }
 
 # ---------------------------------------------------------------- storage
@@ -54,28 +66,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "runs" {
 }
 
 # ---------------------------------------------------------------- secrets
-# Terraform creates the parameters with a placeholder. Real values are set outside Terraform
-# (aws ssm put-parameter --overwrite), so secrets never enter state or this repo.
-resource "aws_ssm_parameter" "api_key" {
-  name  = "/${local.name}/api_key"
-  type  = "SecureString"
-  value = "REPLACE_ME"
-  lifecycle { ignore_changes = [value] }
-}
-
-resource "aws_ssm_parameter" "openrouter" {
-  name  = "/${local.name}/openrouter_api_key"
-  type  = "SecureString"
-  value = "REPLACE_ME"
-  lifecycle { ignore_changes = [value] }
-}
-
-resource "aws_ssm_parameter" "serpapi" {
-  name  = "/${local.name}/serpapi_api_key"
-  type  = "SecureString"
-  value = "REPLACE_ME"
-  lifecycle { ignore_changes = [value] }
-}
+# The three SecureString parameters (see local.ssm_name) are created and rotated outside Terraform:
+#   aws ssm put-parameter --overwrite --type SecureString --name <name> --value <value>
+# Terraform stores a parameter's value in state, so managing them here would put the keys in S3.
 
 # ---------------------------------------------------------------- IAM
 data "aws_iam_policy_document" "assume_lambda" {
@@ -89,13 +82,15 @@ data "aws_iam_policy_document" "assume_lambda" {
 }
 
 resource "aws_iam_role" "api" {
-  name               = "${local.name}-api"
-  assume_role_policy = data.aws_iam_policy_document.assume_lambda.json
+  name                 = "${local.name}-api"
+  assume_role_policy   = data.aws_iam_policy_document.assume_lambda.json
+  permissions_boundary = local.runtime_boundary
 }
 
 resource "aws_iam_role" "worker" {
-  name               = "${local.name}-worker"
-  assume_role_policy = data.aws_iam_policy_document.assume_lambda.json
+  name                 = "${local.name}-worker"
+  assume_role_policy   = data.aws_iam_policy_document.assume_lambda.json
+  permissions_boundary = local.runtime_boundary
 }
 
 data "aws_iam_policy_document" "api" {
@@ -109,7 +104,16 @@ data "aws_iam_policy_document" "api" {
   }
   statement {
     actions   = ["ssm:GetParameter"]
-    resources = [aws_ssm_parameter.api_key.arn]
+    resources = [local.ssm_arn.api_key]
+  }
+  statement { # without ListBucket, S3 answers AccessDenied (not NoSuchKey) for a run that does not exist
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.runs.arn]
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["runs/*"]
+    }
   }
   statement {
     actions   = ["lambda:InvokeFunction"]
@@ -128,7 +132,7 @@ data "aws_iam_policy_document" "worker" {
   }
   statement {
     actions   = ["ssm:GetParameter"]
-    resources = [aws_ssm_parameter.openrouter.arn, aws_ssm_parameter.serpapi.arn]
+    resources = [local.ssm_arn.openrouter, local.ssm_arn.serpapi]
   }
 }
 
@@ -168,8 +172,8 @@ resource "aws_lambda_function" "worker" {
   environment {
     variables = {
       BUCKET           = aws_s3_bucket.runs.bucket
-      PARAM_OPENROUTER = aws_ssm_parameter.openrouter.name
-      PARAM_SERPAPI    = aws_ssm_parameter.serpapi.name
+      PARAM_OPENROUTER = local.ssm_name.openrouter
+      PARAM_SERPAPI    = local.ssm_name.serpapi
       OPENROUTER_MODEL = var.openrouter_model
       MAX_SEARCHES     = tostring(var.max_searches_per_run)
     }
@@ -196,7 +200,7 @@ resource "aws_lambda_function" "api" {
   environment {
     variables = {
       BUCKET          = aws_s3_bucket.runs.bucket
-      PARAM_API_KEY   = aws_ssm_parameter.api_key.name
+      PARAM_API_KEY   = local.ssm_name.api_key
       WORKER_FUNCTION = aws_lambda_function.worker.function_name
     }
   }
